@@ -44,6 +44,17 @@ has pyserial). The protocol between them is `PROTOCOL.md`; keep firmware, `app/s
   the iPhone bonded with `irk: true` and live `conn` RSSI was sampled at 5 Hz, with `phone` events every
   `stream_ms` (about -59 to -61 dBm filtered, zone `room`). Uploads use 115200 baud because 460800 stalled
   on Axel's CP2102 board; the user's board was only ever flashed at 115200.
+- Hardware, 2026-11-18, firmware 0.2.0 on the same board: after a reflash the iPhone reconnected by
+  itself and `conn` RSSI was sampled at 10 Hz; with no link, `adv` tracking (IRK match) took over and
+  reached `near`. On a recording of the phone at rest (old firmware, 5 Hz raw), replayed through both
+  chains: old 1.61-2.70 m, new 1.71-2.04 m.
+- Incident, same day: about 30 s after that reconnect, an encryption event for the iPhone's own link
+  carried its rotating address instead of its identity. `EV_AUTH` took it for a stranger and called
+  `NimBLEDevice::deleteBond`, and `ble_gap_unpair` maps a rotating address back to the identity, so
+  the iPhone's bond was deleted (0 phones after restart; the phone must be forgotten and paired again).
+  Fixed with `phoneForAuth()` (connection, then identity, then IRK). The fix is not yet confirmed on
+  hardware, and what makes iOS send that second encryption event is not known. Never delete a bond
+  by an address that has not been checked against the known phones' IRKs.
 - Not yet validated on hardware: `autocal` end to end with a phone moved between two measured spots
   and turned (its thresholds, 2 dB steady / 4 dB moved / 3 dB still, come from the fading model, not
   from the board), and how many dB the iPhone's orientation really costs.

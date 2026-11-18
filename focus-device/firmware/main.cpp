@@ -1097,6 +1097,26 @@ static void dropPending(uint16_t conn) {
     if (p.used && p.conn == conn) p.used = false;
 }
 
+// Which known phone just authenticated? -1 = a stranger.
+// Checked three ways, because getting this wrong is costly: a known phone taken for a stranger
+// has its bond deleted (NimBLE maps a phone's rotating address back to its identity when asked to
+// unpair it), and then it has to be forgotten on the phone and paired again. That happened on
+// hardware on 2026-11-18: an iPhone's encryption event carried its rotating address.
+//   1. the connection is already this phone's (its link was just encrypted again);
+//   2. the identity address matches;
+//   3. the address is one of the phone's rotating addresses (checked with its IRK).
+static int phoneForAuth(uint16_t conn, const ble_addr_t &addr) {
+  int i = findPhoneByConn(conn);
+  if (i < 0) i = findPhone(addr);
+  if (i < 0 && rpa::isResolvable(addr.val)) {
+    xSemaphoreTake(phonesLock, portMAX_DELAY);  // the scan callback uses the resolvers too
+    for (int k = 0; k < MAX_PHONES && i < 0; k++)
+      if (phones[k].used && phones[k].hasIrk && phones[k].resolver.matches(addr.val)) i = k;
+    xSemaphoreGive(phonesLock);
+  }
+  return i;
+}
+
 static void handleEvent(const Ev &e, uint32_t now) {
   switch (e.type) {
     case EV_ADV:
@@ -1123,10 +1143,11 @@ static void handleEvent(const Ev &e, uint32_t now) {
         disconnect(e.conn);
         break;
       }
-      int i = findPhone(e.addr);
+      int i = phoneForAuth(e.conn, e.addr);
       if (i >= 0) {  // a known phone (re)connected
+        if (phones[i].conn == e.conn) break;  // its link was encrypted again: nothing new
         phones[i].conn = e.conn;
-        emit(Json("conn").num("id", i).str("addr", addrStr(e.addr)).str("state", "connected").done());
+        emit(Json("conn").num("id", i).str("addr", addrStr(phones[i].id)).str("state", "connected").done());
         if (cfg.mode == MODE_SCAN && !pairing) disconnect(e.conn);
         else if (cfg.mode == MODE_HID)  // 30-45 ms interval, no latency, 4 s timeout (Apple-compatible)
           server->updateConnParams(e.conn, 24, 36, 0, 400);
