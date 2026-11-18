@@ -1,0 +1,76 @@
+{
+  // Run with Ctrl+Shift+P -> "Tasks: Run Task" (Ctrl+Shift+B = Build).
+  // These replace the PlatformIO extension's toolbar buttons, so no extension is needed.
+  "version": "2.0.0",
+  "options": {
+    "env": { "PLATFORMIO_DISABLE_PROGRESSBAR": "true" }
+  },
+  "tasks": [
+    {
+      "label": "ESP32: Build",
+      "type": "process",
+      "command": "${userHome}/.platformio/penv/Scripts/pio.exe",
+      "args": ["run"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+    },
+    {
+      "label": "ESP32: Upload",
+      "type": "process",
+      "command": "${userHome}/.platformio/penv/Scripts/pio.exe",
+      "args": ["run", "-t", "upload"],
+      "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+    },
+    {
+      "label": "ESP32: Upload + Monitor",
+      "type": "process",
+      "command": "${userHome}/.platformio/penv/Scripts/pio.exe",
+      "args": ["run", "-t", "upload", "-t", "monitor"],
+      "problemMatcher": { "base": "$gcc", "fileLocation": ["autoDetect", "${workspaceFolder}"] }
+    },
+    {
+      "label": "ESP32: Serial Monitor",
+      "type": "process",
+      "command": "${userHome}/.platformio/penv/Scripts/pio.exe",
+      "args": ["device", "monitor"],
+      "problemMatcher": []
+    },
+    {
+      "label": "ESP32: Control Shell",
+      "type": "process",
+      "command": "${userHome}/.platformio/penv/Scripts/python.exe",
+      "args": ["${workspaceFolder}/tools/esp.py"],
+      "problemMatcher": []
+    },
+    {
+      "label": "ESP32: Detect Board",
+      "type": "process",
+      "command": "${userHome}/.platformio/penv/Scripts/python.exe",
+      "args": ["${workspaceFolder}/tools/esp.py", "--detect"],
+      "problemMatcher": []
+    },
+    {
+      "label": "ESP32: List Ports",
+      "type": "process",
+      "command": "${userHome}/.platformio/penv/Scripts/python.exe",
+      "args": ["${workspaceFolder}/tools/esp.py", "--list"],
+      "problemMatcher": []
+    },
+    {
+      "label": "ESP32: Erase Flash",
+      "type": "process",
+      "command": "${userHome}/.platformio/penv/Scripts/pio.exe",
+      "args": ["run", "-t", "erase"],
+      "problemMatcher": []
+    },
+    {
+      "label": "ESP32: Refresh IntelliSense",
+      "detail": "Re-run after changing default_envs or adding libraries",
+      // pio always writes an extensions.json recommending the PlatformIO extension (which breaks in Cursor), so drop it.
+      "type": "shell",
+      "command": "& '${userHome}/.platformio/penv/Scripts/pio.exe' project init --ide vscode; Remove-Item -ErrorAction SilentlyContinue .vscode/extensions.json",
+      "options": { "shell": { "executable": "powershell.exe", "args": ["-NoProfile", "-Command"] } },
+      "problemMatcher": []
+    }
+  ]
+}

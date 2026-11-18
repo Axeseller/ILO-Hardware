@@ -1,0 +1,9 @@
+{
+  // Cursor's terminal gets `pio`, `esp` and a Python that has pyserial, without changing your system PATH.
+  "terminal.integrated.env.windows": {
+    "PATH": "${workspaceFolder};${env:USERPROFILE}\\.platformio\\penv\\Scripts;${env:PATH}"
+  },
+  "python.defaultInterpreterPath": "${userHome}/.platformio/penv/Scripts/python.exe",
+  "files.associations": { "*.ino": "cpp" },
+  "files.exclude": { "**/.pio": true }
+}
